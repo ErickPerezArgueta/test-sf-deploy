@@ -14,10 +14,10 @@ jobs:
       SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
       SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
       SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
-      SNOWSQL_ROLE: ${{ secrets.SF_ROLE }}
-      SNOWSQL_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-      SNOWSQL_DATABASE: ${{ secrets.SF_DATABASE }}
-      SNOWFLAKE_SCHEMA: ${{secrets.SF_SCHEMA_EXP}}
+      SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+      SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{vars.SF_SCHEMA_EXP}}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
