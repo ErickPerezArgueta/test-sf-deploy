@@ -147,4 +147,6 @@ def train_register(session: Session) -> T.Variant:
 
     mv = register_model(session=session, db_name=db, schema_name=schema, model=xgbmodel, model_name="BANANA_MODEL", metrics_train=metrics_train, metrics_test=metrics_test)
 
+    print("ESTE ES UN PRINT PARA VALIDAR APPENDS EN STAGE CUANDO SE EJECUTA EL PIPELINE")
+
     return str(f'El entrenamiento y registro en model registry se realizó de manera exitosa')
