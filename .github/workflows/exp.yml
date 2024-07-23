@@ -50,24 +50,6 @@ jobs:
           echo "dbname = $SNOWSQL_DATABASE" >> ~/.snowsql/config
           echo "schemaname = $SNOWFLAKE_SCHEMA" >> ~/.snowsql/config
 
-      # Deploy setup
-#       - name: Deploy setup SQL script with SnowSQL and loads data to stage
-#         run: #|
-# #         python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/setup/general/env_space.sql
-#          ~/bin/snowsql -c dev -q "PUT file://$GITHUB_WORKSPACE/data/banana_quality_raw.csv @BANANA_QUALITY.EXP.RAW_DATA AUTO_COMPRESS=FALSE;"
-
-      # - name: Loads data to stage
-      #   run: 
-      #     python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/loading/load_raw_file.sql
-          
-      # - name: loads process and train store procedures on Snowflake
-      #   run: |
-      #     python $GITHUB_WORKSPACE/src/sproc/sp_process.py
-      #     python $GITHUB_WORKSPACE/src/sproc/sp_train.py
-
-      # - name: Creates train pipeline
-      #   run: 
-      #    python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/tasks/pipeline_train.sql
 
       - name: Creates pipeline
         run: 

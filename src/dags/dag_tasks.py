@@ -37,7 +37,9 @@ session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
-with DAG("MY_DAG", schedule=timedelta(minutes=2)) as dag:
+#schedule=timedelta(minutes=2)
+
+with DAG("MY_DAG") as dag:
     dag_task1 = DAGTask(
         "process",
         StoredProcedureCall(
