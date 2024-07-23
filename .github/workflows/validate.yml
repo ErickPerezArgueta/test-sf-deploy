@@ -1,0 +1,80 @@
+name: snowflake-dataops-validate
+
+# Controls when the action will run. 
+on:
+  pull_request:
+    branches:
+      - validate
+    types:
+      - closed
+
+  #  paths:
+  #    - 'migrations/**'
+jobs:
+  setup_snowflake_workspace_validate:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'validate' && github.event.pull_request.head.ref == 'exp'
+    runs-on: ubuntu-latest
+    environment: VALIDATE
+    env:
+      SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+      SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+      SNOWSQL_ROLE: ${{ secrets.SF_ROLE }}
+      SNOWSQL_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+      SNOWSQL_DATABASE: ${{ secrets.SF_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{secrets.SF_SCHEMA_VALIDATE}}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python packages
+        run: pip install -r requirements.txt
+
+      - name: Download SnowSQL
+        run:  curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
+      
+      - name: Install SnowSQL
+        run: SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
+
+      - name: Configure snowcli
+        run: |
+          mkdir -p ~/.snowsql
+          echo "[connections.dev]" > ~/.snowsql/config
+          echo "accountname = $SNOWSQL_ACCOUNT" >> ~/.snowsql/config
+          echo "username = $SNOWSQL_USER" >> ~/.snowsql/config
+          echo "password = $SNOWSQL_PWD" >> ~/.snowsql/config
+          echo "rolename = $SNOWSQL_ROLE" >> ~/.snowsql/config
+          echo "warehousename = $SNOWSQL_WAREHOUSE" >> ~/.snowsql/config
+          echo "dbname = $SNOWSQL_DATABASE" >> ~/.snowsql/config
+          echo "schemaname = $SNOWFLAKE_SCHEMA" >> ~/.snowsql/config
+
+      # # Deploy setup
+      # - name: Deploy setup SQL script with SnowSQL and loads data to stage
+      #   run: |
+      #    python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/setup/general/env_space.sql
+      #    ~/bin/snowsql -c dev -q "PUT file://$GITHUB_WORKSPACE/data/banana_quality_raw.csv @BANANA_QUALITY.VALIDATE.RAW_DATA AUTO_COMPRESS=FALSE;"
+      
+      # - name: Loads data to stage
+      #   run: 
+      #     python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/loading/load_raw_file.sql
+          
+      # - name: loads process and train store procedures on Snowflake
+      #   run: |
+      #     python $GITHUB_WORKSPACE/src/sproc/sp_process.py
+      #     python $GITHUB_WORKSPACE/src/sproc/sp_train.py
+
+      # - name: Creates train pipeline
+      #   run: 
+      #    python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/tasks/pipeline_train.sql
+
+      - name: Creates pipeline
+        run: 
+         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
+
