@@ -104,8 +104,9 @@ dag_task1_inference >> dag_task1_inference
 
 root = Root(session)
 schema = root.databases[dict_creds['database']].schemas[dict_creds['schema']]
-dag_op = DAGOperation(schema)
-dag_op.deploy(dag_train, CreateMode.or_replace)
-dag_op.run(dag_train)
+dag_op_train = DAGOperation(schema)
+dag_op_train.deploy(dag_train, CreateMode.or_replace)
+dag_op_train.run(dag_train)
 
-dag_op.deploy(dag_inference, CreateMode.or_replace)
+dag_op_inference = DAGOperation(schema)
+dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
