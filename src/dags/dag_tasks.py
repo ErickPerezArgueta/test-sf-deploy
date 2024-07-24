@@ -40,10 +40,19 @@ session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
-session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/""").collect()
+try:
+    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/""").collect()
+except Exception as e:
+    print(f"Error removing TRAIN_PIPELINE: {e}")
 
-with DAG("MY_DAG") as dag:
-    dag_task1 = DAGTask(
+try:
+    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/""").collect()
+except Exception as e:
+    print(f"Error removing INFERENCE_PIPELINE: {e}")
+
+
+with DAG("DAG_TRAIN") as dag_train:
+    dag_task1_train = DAGTask(
         "process",
         StoredProcedureCall(
             func=process_data,
@@ -53,7 +62,7 @@ with DAG("MY_DAG") as dag:
         ),
         warehouse="COMPUTE_WH"
     )
-    dag_task2 = DAGTask(
+    dag_task2_train = DAGTask(
         "train_register",
         StoredProcedureCall(
             func=train_register,
@@ -64,10 +73,39 @@ with DAG("MY_DAG") as dag:
         warehouse="COMPUTE_WH"
     )
 
-dag_task1 >> dag_task2
+dag_task1_train >> dag_task2_train
+
+
+with DAG("DAG_INFERENCE") as dag_inference:
+    dag_task1_inference = DAGTask(
+        "process",
+        StoredProcedureCall(
+            func=process_data,
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/PROCESS",
+            packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+            imports=[os.path.join(my_dir, 'process_func.py')]
+        ),
+        warehouse="COMPUTE_WH"
+    )
+    dag_task2_inference = DAGTask(
+        "train_register",
+        StoredProcedureCall(
+            func=train_register,
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/INFERENCE",
+            packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+            imports=[os.path.join(my_dir, 'train_func.py')]
+        ),
+        warehouse="COMPUTE_WH"
+    )
+
+dag_task1_inference >> dag_task1_inference
+
+
 
 root = Root(session)
 schema = root.databases[dict_creds['database']].schemas[dict_creds['schema']]
 dag_op = DAGOperation(schema)
-dag_op.deploy(dag, CreateMode.or_replace)
-dag_op.run(dag)
+dag_op.deploy(dag_train, CreateMode.or_replace)
+dag_op.run(dag_train)
+
+dag_op.deploy(dag_inference, CreateMode.or_replace)
