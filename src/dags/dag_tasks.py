@@ -98,7 +98,7 @@ with DAG("DAG_INFERENCE") as dag_inference:
         warehouse="COMPUTE_WH"
     )
 
-dag_task1_inference >> dag_task1_inference
+dag_task1_inference >> dag_task2_inference
 
 
 
