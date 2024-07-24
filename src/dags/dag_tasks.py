@@ -17,7 +17,8 @@ from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
 from imports_train_pipeline.process_func import process_data
 from imports_train_pipeline.train_func import train_register
-
+from imports_inference_pipeline.process_inference_func import process_data_inference
+from imports_inference_pipeline.inference_func import train_register_inference
 
 my_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -78,29 +79,29 @@ with DAG("DAG_TRAIN") as dag_train:
 dag_task1_train >> dag_task2_train
 
 
-# with DAG("DAG_INFERENCE") as dag_inference:
-#     dag_task1_inference = DAGTask(
-#         "process",
-#         StoredProcedureCall(
-#             func=process_data,
-#             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/PROCESS",
-#             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-#             imports=[os.path.join(my_dir, 'process_func.py')]
-#         ),
-#         warehouse="COMPUTE_WH"
-#     )
-#     dag_task2_inference = DAGTask(
-#         "train_register",
-#         StoredProcedureCall(
-#             func=train_register,
-#             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/INFERENCE",
-#             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-#             imports=[os.path.join(my_dir, 'train_func.py')]
-#         ),
-#         warehouse="COMPUTE_WH"
-#     )
+with DAG("DAG_INFERENCE") as dag_inference:
+    dag_task1_inference = DAGTask(
+        "process",
+        StoredProcedureCall(
+            func=process_data_inference,
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/PROCESS",
+            packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+            imports=['src/dags/imports_inference_pipeline']
+        ),
+        warehouse="COMPUTE_WH"
+    )
+    dag_task2_inference = DAGTask(
+        "train_register",
+        StoredProcedureCall(
+            func=train_register_inference,
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/INFERENCE",
+            packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+            imports=['src/dags/imports_inference_pipeline']
+        ),
+        warehouse="COMPUTE_WH"
+    )
 
-# dag_task1_inference >> dag_task2_inference
+dag_task1_inference >> dag_task2_inference
 
 
 
@@ -111,7 +112,7 @@ dag_op_train.deploy(dag_train, CreateMode.or_replace)
 dag_op_train.run(dag_train)
 
 
-# root_inference = Root(session)
-# schema_inference = root_inference.databases[dict_creds['database']].schemas[dict_creds['schema']]
-# dag_op_inference = DAGOperation(schema_inference)
-# dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
+root_inference = Root(session)
+schema_inference = root_inference.databases[dict_creds['database']].schemas[dict_creds['schema']]
+dag_op_inference = DAGOperation(schema_inference)
+dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
