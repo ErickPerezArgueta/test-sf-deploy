@@ -25,23 +25,25 @@ my_dir = os.path.dirname(os.path.realpath(__file__))
 config = configparser.ConfigParser()
 config_path = os.path.expanduser("~/.snowsql/config") 
 config.read(config_path)
+stage_name=os.getenv("STAGE_NAME")
+train_dir=os.getenv("TRAIN_DIR")
+inference_dir=os.getenv("INFERENCE_DIR")
+environment=os.getenv("exp")
 
 # Access the values using the section and key
 # Assuming the values you want are in the "connections.dev" section
 dict_creds = {}
 
 #Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
-dict_creds['account'] = config['connections.dev']['accountname']
-dict_creds['user'] = config['connections.dev']['username']
-dict_creds['password'] = config['connections.dev']['password']
-dict_creds['role'] = config['connections.dev']['rolename']
-dict_creds['database'] = config['connections.dev']['dbname']
-dict_creds['warehouse'] = config['connections.dev']['warehousename']
-dict_creds['schema'] = config['connections.dev']['schemaname']
+dict_creds['account'] = config[f'connections.{environment}']['accountname']
+dict_creds['user'] = config[f'connections.{environment}']['username']
+dict_creds['password'] = config[f'connections.{environment}']['password']
+dict_creds['role'] = config[f'connections.{environment}']['rolename']
+dict_creds['database'] = config[f'connections.{environment}']['dbname']
+dict_creds['warehouse'] = config[f'connections.{environment}']['warehousename']
+dict_creds['schema'] = config[f'connections.{environment}']['schemaname']
 
-stage_name=os.getenv("STAGE_NAME")
-train_dir=os.getenv("TRAIN_DIR")
-inference_dir=os.getenv("INFERENCE_DIR")
+
 
 session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
