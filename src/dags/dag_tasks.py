@@ -1,7 +1,8 @@
 import configparser
 import os
+import sys
+print(sys.path)
 
-from datetime import timedelta
 from typing import *
 
 from snowflake.snowpark.session import Session
@@ -12,8 +13,9 @@ from snowflake.core._common import CreateMode
 from snowflake.core.task import StoredProcedureCall
 from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
-from imports_train.process_func import process_data
-from imports_train.train_func import train_register
+from process_func import process_data
+from train_func import train_register
+
 
 my_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -38,15 +40,16 @@ session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
+session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/""").collect()
 
 with DAG("MY_DAG") as dag:
     dag_task1 = DAGTask(
         "process",
         StoredProcedureCall(
             func=process_data,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/PROCESS_PROCESS",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=['test-sf-deploy/src/dags/imports_train']
+            imports=[os.path.join(my_dir, 'process_func.py')]
         ),
         warehouse="COMPUTE_WH"
     )
@@ -54,9 +57,9 @@ with DAG("MY_DAG") as dag:
         "train_register",
         StoredProcedureCall(
             func=train_register,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/TRAIN_PROCESS",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/TRAIN",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=['test-sf-deploy/src/dags/imports_inference']
+            imports=[os.path.join(my_dir, 'train_func.py')]
         ),
         warehouse="COMPUTE_WH"
     )
@@ -67,3 +70,4 @@ root = Root(session)
 schema = root.databases[dict_creds['database']].schemas[dict_creds['schema']]
 dag_op = DAGOperation(schema)
 dag_op.deploy(dag, CreateMode.or_replace)
+dag_op.run(dag)
