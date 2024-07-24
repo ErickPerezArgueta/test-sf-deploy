@@ -13,6 +13,8 @@ from snowflake.core._common import CreateMode
 from snowflake.core.task import StoredProcedureCall
 from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
+# Ensure the parent directory of `src` is in sys.path
+
 from imports_train_pipeline.process_func import process_data
 from imports_train_pipeline.train_func import train_register
 
@@ -58,7 +60,7 @@ with DAG("DAG_TRAIN") as dag_train:
             func=process_data,
             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=['imports_train_pipeline']
+            imports=['dags\imports_train_pipeline']
         ),
         warehouse="COMPUTE_WH"
     )
@@ -68,7 +70,7 @@ with DAG("DAG_TRAIN") as dag_train:
             func=train_register,
             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/TRAIN",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=['imports_train_pipeline']
+            imports=['dags\imports_train_pipeline']
         ),
         warehouse="COMPUTE_WH"
     )
