@@ -40,18 +40,20 @@ dict_creds['warehouse'] = config['connections.dev']['warehousename']
 dict_creds['schema'] = config['connections.dev']['schemaname']
 
 stage_name=os.getenv("STAGE_NAME")
+train_dir=os.getenv("TRAIN_DIR")
+inference_dir=os.getenv("INFERENCE_DIR")
 
 session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
 try:
-    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/TRAIN_PIPELINE/""").collect()
+    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/""").collect()
 except Exception as e:
     print(f"Error removing TRAIN_PIPELINE: {e}")
 
 try:
-    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/INFERENCE_PIPELINE/""").collect()
+    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/""").collect()
 except Exception as e:
     print(f"Error removing INFERENCE_PIPELINE: {e}")
 
@@ -61,7 +63,7 @@ with DAG("DAG_TRAIN") as dag_train:
         "process",
         StoredProcedureCall(
             func=process_data,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/PROCESS",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
             imports=['src/dags/imports_train_pipeline']
         ),
@@ -71,7 +73,7 @@ with DAG("DAG_TRAIN") as dag_train:
         "train_register",
         StoredProcedureCall(
             func=train_register,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/TRAIN",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/TRAIN",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
             imports=['src/dags/imports_train_pipeline']
         ),
@@ -86,7 +88,7 @@ with DAG("DAG_INFERENCE") as dag_inference:
         "process",
         StoredProcedureCall(
             func=process_data_inference,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/PROCESS",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
             imports=['src/dags/imports_inference_pipeline']
         ),
@@ -96,7 +98,7 @@ with DAG("DAG_INFERENCE") as dag_inference:
         "train_register",
         StoredProcedureCall(
             func=train_register_inference,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/INFERENCE",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/INFERENCE_PIPELINE/INFERENCE",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
             imports=['src/dags/imports_inference_pipeline']
         ),
