@@ -12,7 +12,8 @@ from snowflake.core._common import CreateMode
 from snowflake.core.task import StoredProcedureCall
 from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
-from functions import process_data, train_register
+from imports_train.process_func import process_data
+from imports_train.train_func import train_register
 
 my_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,16 +38,15 @@ session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
-#schedule=timedelta(minutes=2)
 
 with DAG("MY_DAG") as dag:
     dag_task1 = DAGTask(
         "process",
         StoredProcedureCall(
             func=process_data,
-            stage_location="@ML_MODELS",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/PROCESS_PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=[os.path.join(my_dir, 'functions.py')]
+            imports=['test-sf-deploy/dags/imports_train']
         ),
         warehouse="COMPUTE_WH"
     )
@@ -54,9 +54,9 @@ with DAG("MY_DAG") as dag:
         "train_register",
         StoredProcedureCall(
             func=train_register,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/TRAIN_PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=[os.path.join(my_dir, 'functions.py')]
+            imports=['test-sf-deploy/dags/imports_inference']
         ),
         warehouse="COMPUTE_WH"
     )
