@@ -28,7 +28,7 @@ config.read(config_path)
 stage_name=os.getenv("STAGE_NAME")
 train_dir=os.getenv("TRAIN_DIR")
 inference_dir=os.getenv("INFERENCE_DIR")
-environment=os.getenv("exp")
+environment=os.getenv("ENV_NAME")
 
 # Access the values using the section and key
 # Assuming the values you want are in the "connections.dev" section
