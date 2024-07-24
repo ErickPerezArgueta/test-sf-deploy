@@ -98,7 +98,7 @@ with DAG("DAG_INFERENCE") as dag_inference:
         "train_register",
         StoredProcedureCall(
             func=train_register_inference,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/INFERENCE_PIPELINE/INFERENCE",
+            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/INFERENCE",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
             imports=['src/dags/imports_inference_pipeline']
         ),

@@ -51,7 +51,6 @@ jobs:
           echo "dbname = $SNOWSQL_DATABASE" >> ~/.snowsql/config
           echo "schemaname = $SNOWFLAKE_SCHEMA" >> ~/.snowsql/config
 
-
       - name: Creates pipeline
         env:
           STAGE_NAME: ${{vars.STAGE_NAME}}
