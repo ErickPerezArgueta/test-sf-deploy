@@ -46,7 +46,7 @@ with DAG("MY_DAG") as dag:
             func=process_data,
             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/PROCESS_PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=['test-sf-deploy/dags/imports_train']
+            imports=['test-sf-deploy/src/dags/imports_train']
         ),
         warehouse="COMPUTE_WH"
     )
@@ -56,7 +56,7 @@ with DAG("MY_DAG") as dag:
             func=train_register,
             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/TRAIN_PROCESS",
             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=['test-sf-deploy/dags/imports_inference']
+            imports=['test-sf-deploy/src/dags/imports_inference']
         ),
         warehouse="COMPUTE_WH"
     )
