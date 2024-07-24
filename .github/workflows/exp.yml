@@ -18,6 +18,7 @@ jobs:
       SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
       SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
       SNOWFLAKE_SCHEMA: ${{vars.SF_SCHEMA_EXP}}
+      ENV_NAME: "exp"
       
 
     steps:
@@ -42,7 +43,7 @@ jobs:
       - name: Configure snowcli
         run: |
           mkdir -p ~/.snowsql
-          echo "[connections.dev]" > ~/.snowsql/config
+          echo "[connections.${{ env.ENV_NAME }}]" > ~/.snowsql/config
           echo "accountname = $SNOWSQL_ACCOUNT" >> ~/.snowsql/config
           echo "username = $SNOWSQL_USER" >> ~/.snowsql/config
           echo "password = $SNOWSQL_PWD" >> ~/.snowsql/config

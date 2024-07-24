@@ -8,8 +8,6 @@ on:
     types:
       - closed
 
-  #  paths:
-  #    - 'migrations/**'
 jobs:
   setup_snowflake_workspace_validate:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'validate' && github.event.pull_request.head.ref == 'exp'
