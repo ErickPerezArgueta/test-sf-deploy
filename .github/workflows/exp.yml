@@ -18,6 +18,7 @@ jobs:
       SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
       SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
       SNOWFLAKE_SCHEMA: ${{vars.SF_SCHEMA_EXP}}
+      
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -52,5 +53,7 @@ jobs:
 
 
       - name: Creates pipeline
+        env:
+          STAGE_NAME: ${{vars.STAGE_NAME}}
         run: 
          python $GITHUB_WORKSPACE/src/dags/dag_tasks.py

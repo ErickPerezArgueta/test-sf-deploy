@@ -39,17 +39,19 @@ dict_creds['database'] = config['connections.dev']['dbname']
 dict_creds['warehouse'] = config['connections.dev']['warehousename']
 dict_creds['schema'] = config['connections.dev']['schemaname']
 
+stage_name=os.getenv("STAGE_NAME")
+
 session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
 try:
-    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/TRAIN_PIPELINE/""").collect()
+    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/TRAIN_PIPELINE/""").collect()
 except Exception as e:
     print(f"Error removing TRAIN_PIPELINE: {e}")
 
 try:
-    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS/INFERENCE_PIPELINE/""").collect()
+    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/INFERENCE_PIPELINE/""").collect()
 except Exception as e:
     print(f"Error removing INFERENCE_PIPELINE: {e}")
 
