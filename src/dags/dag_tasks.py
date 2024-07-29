@@ -12,6 +12,7 @@ from snowflake.core import Root
 from snowflake.core._common import CreateMode
 from snowflake.core.task import StoredProcedureCall
 from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
+from snowflake.snowpark.exceptions import SnowparkSQLException
 
 # Ensure the parent directory of `src` is in sys.path
 
@@ -51,13 +52,23 @@ session.use_schema(dict_creds['schema'])
 
 try:
     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/""").collect()
-except Exception as e:
-    print(f"Error removing TRAIN_PIPELINE: {e}")
-
-try:
     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/""").collect()
+
+except SnowparkSQLException as e:
+    error_message = str(e)
+    error_code = e.error_code
+    print(f"Debug: Caught SnowparkSQLException with code {error_code} and message: {error_message}")
+    
+    if error_code == "1304" in error_message:  
+        print(f"Error: The specified directory does not exist: {error_message}")
+        sys.exit(1)
+    else:
+        print(f"An unexpected Snowpark error occurred: {error_message}")
+        raise
 except Exception as e:
-    print(f"Error removing INFERENCE_PIPELINE: {e}")
+    print(f"An unexpected error occurred: {str(e)}")
+    raise
+
 
 
 with DAG("DAG_TRAIN") as dag_train:
