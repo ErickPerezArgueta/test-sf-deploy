@@ -28,7 +28,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Set up Snowflake
-        uses: composite_sf@main
+        uses: ErickPerezArgueta/composite_sf@main
         with:
           SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
           SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
