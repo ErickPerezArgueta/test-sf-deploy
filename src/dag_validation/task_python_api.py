@@ -28,7 +28,23 @@ root = Root(session)
 
 tasks: TaskCollection = root.databases['banana_quality'].schemas['exp'].tasks
 task_iter = tasks.iter()  # returns a PagedIter[Task]
-print(task_iter)
-print(type(task_iter))
+# print(task_iter)
+# print(type(task_iter))
+# for task_obj in task_iter:
+#   print(task_obj.name)
+
+MODEL_NAME = 'GATO' 
+
+# Variable para verificar si el modelo existe
+model_exists = False
+
+# Iterar a través del iterador de tareas y verificar si algún nombre de tarea contiene MODEL_NAME
 for task_obj in task_iter:
-  print(task_obj.name)
+    if MODEL_NAME in task_obj.name:
+        model_exists = True
+        break  # No es necesario seguir iterando si encontramos una coincidencia
+
+if model_exists:
+    print(f"Un modelo con el nombre '{MODEL_NAME}' ya existe.")
+else:
+    print(f"No existe ningún modelo con el nombre '{MODEL_NAME}'.")

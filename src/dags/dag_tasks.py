@@ -45,11 +45,10 @@ dict_creds['database'] = config[f'connections.{environment}']['dbname']
 dict_creds['warehouse'] = config[f'connections.{environment}']['warehousename']
 dict_creds['schema'] = config[f'connections.{environment}']['schemaname']
 
-
-
 session = Session.builder.configs(dict_creds).create()
 session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
+
 
 try:
     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/""").collect()

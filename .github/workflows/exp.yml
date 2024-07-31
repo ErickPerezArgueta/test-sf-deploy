@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - exp
+    tags:
+        -'*'
 
 jobs:
   setup_snowflake_workspace_exp:
