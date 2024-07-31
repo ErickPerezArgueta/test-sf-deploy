@@ -19,25 +19,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      # - name: Setup Python 3.11
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: '3.11'
       
-      - name: Install Python packages
-        run: pip install -r requirements.txt
+      # - name: Install Python packages
+      #   run: pip install -r requirements.txt
 
-      - name: Set up Snowflake
-        uses: ErickPerezArgueta/composite_sf@main
-        with:
-          SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-          SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
-          SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
-          SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
-          SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
-          SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
-          SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
-          ENV_NAME: ${{ env.ENV_NAME }}
+      # - name: Set up Snowflake
+      #   uses: ErickPerezArgueta/composite_sf@main
+      #   with:
+      #     SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      #     SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+      #     SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+      #     SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+      #     SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      #     SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+      #     SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
+      #     ENV_NAME: ${{ env.ENV_NAME }}
 
       # - name: Cache previous GITHUB_SHA
       #   id: cache-sha
@@ -47,7 +47,7 @@ jobs:
       #     key: previous-sha
 
       - name: view github workspace
-        run: echo $GITHUB_WORKSPACE
+        run: ls=$(echo $GITHUB_WORKSPACE)
       
       # - name: Save current GITHUB_SHA
       #   run: |
