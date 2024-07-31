@@ -48,7 +48,14 @@ jobs:
       
       - name: Save current GITHUB_SHA
         run: |
-          echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
+          if [-f .github/previous_sha/current_sha.txt]
+          then
+            echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
+          else
+            touch .github/previous_sha/current_sha.txt
+            echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
+          fi
+
           echo CURRENT_SHA: ${GITHUB_SHA} >> "$GITHUB_ENV" 
 
       # - name: Get previous GITHUB_SHA
