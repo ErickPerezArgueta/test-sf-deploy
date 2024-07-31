@@ -45,18 +45,21 @@ jobs:
       #   with:
       #     path: .github/previous_sha
       #     key: previous-sha
-      
-      - name: Save current GITHUB_SHA
-        run: |
-          if [-f .github/previous_sha/current_sha.txt]
-          then
-            echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
-          else
-            touch .github/previous_sha/current_sha.txt
-            echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
-          fi
 
-          echo CURRENT_SHA: ${GITHUB_SHA} >> "$GITHUB_ENV" 
+      - name: view github workspace
+        run: echo $GITHUB_WORKSPACE
+      
+      # - name: Save current GITHUB_SHA
+      #   run: |
+      #     if [-f .github/previous_sha/current_sha.txt]
+      #     then
+      #       echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
+      #     else
+      #       touch .github/previous_sha/current_sha.txt
+      #       echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
+      #     fi
+
+      #     echo CURRENT_SHA: ${GITHUB_SHA} >> "$GITHUB_ENV" 
 
       # - name: Get previous GITHUB_SHA
       #   id: get-previous-sha
@@ -67,12 +70,12 @@ jobs:
       #     fi
                   
 
-      - name: Creates pipeline
-        env:
-          STAGE_NAME: ${{vars.STAGE_NAME}}
-          TRAIN_DIR: ${{vars.TRAIN_DIR}}
-          INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
-          MODEL_NAME: ${{vars.MODEL_NAME}}
-          CURRENT_SHA: ${{ env.CURRENT_SHA }}
-        run: 
-         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
+      # - name: Creates pipeline
+      #   env:
+      #     STAGE_NAME: ${{vars.STAGE_NAME}}
+      #     TRAIN_DIR: ${{vars.TRAIN_DIR}}
+      #     INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
+      #     MODEL_NAME: ${{vars.MODEL_NAME}}
+      #     CURRENT_SHA: ${{ env.CURRENT_SHA }}
+      #   run: 
+      #    python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
