@@ -19,25 +19,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # - name: Setup Python 3.11
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: '3.11'
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       
-      # - name: Install Python packages
-      #   run: pip install -r requirements.txt
+      - name: Install Python packages
+        run: pip install -r requirements.txt
 
-      # - name: Set up Snowflake
-      #   uses: ErickPerezArgueta/composite_sf@main
-      #   with:
-      #     SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-      #     SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
-      #     SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
-      #     SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
-      #     SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
-      #     SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
-      #     SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
-      #     ENV_NAME: ${{ env.ENV_NAME }}
+      - name: Set up Snowflake
+        uses: ErickPerezArgueta/composite_sf@main
+        with:
+          SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+          SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+          SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+          SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+          SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
+          ENV_NAME: ${{ env.ENV_NAME }}
 
       # - name: Cache previous GITHUB_SHA
       #   id: cache-sha
@@ -46,8 +46,6 @@ jobs:
       #     path: .github/previous_sha
       #     key: previous-sha
 
-      - name: view github workspace
-        run: ls $GITHUB_WORKSPACE
       
       # - name: Save current GITHUB_SHA
       #   run: |
@@ -58,6 +56,9 @@ jobs:
       #       touch .github/previous_sha/current_sha.txt
       #       echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
       #     fi
+      - name: Save SHA IN ENV CONTEXT
+        run: 
+          echo "CURRENT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
 
       #     echo CURRENT_SHA: ${GITHUB_SHA} >> "$GITHUB_ENV" 
 
@@ -70,12 +71,12 @@ jobs:
       #     fi
                   
 
-      # - name: Creates pipeline
-      #   env:
-      #     STAGE_NAME: ${{vars.STAGE_NAME}}
-      #     TRAIN_DIR: ${{vars.TRAIN_DIR}}
-      #     INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
-      #     MODEL_NAME: ${{vars.MODEL_NAME}}
-      #     CURRENT_SHA: ${{ env.CURRENT_SHA }}
-      #   run: 
-      #    python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
+      - name: Creates pipeline
+        env:
+          STAGE_NAME: ${{vars.STAGE_NAME}}
+          TRAIN_DIR: ${{vars.TRAIN_DIR}}
+          INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
+          MODEL_NAME: ${{vars.MODEL_NAME}}
+          CURRENT_SHA: ${{ env.CURRENT_SHA }}
+        run: 
+         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
