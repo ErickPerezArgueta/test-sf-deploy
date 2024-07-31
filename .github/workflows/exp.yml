@@ -47,7 +47,7 @@ jobs:
       #     key: previous-sha
 
       - name: view github workspace
-        run: ls=$(echo $GITHUB_WORKSPACE)
+        run: ls $GITHUB_WORKSPACE
       
       # - name: Save current GITHUB_SHA
       #   run: |
