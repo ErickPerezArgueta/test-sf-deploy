@@ -38,38 +38,11 @@ jobs:
           SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
           SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
           ENV_NAME: ${{ env.ENV_NAME }}
-
-      # - name: Cache previous GITHUB_SHA
-      #   id: cache-sha
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: .github/previous_sha
-      #     key: previous-sha
-
       
-      # - name: Save current GITHUB_SHA
-      #   run: |
-      #     if [-f .github/previous_sha/current_sha.txt]
-      #     then
-      #       echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
-      #     else
-      #       touch .github/previous_sha/current_sha.txt
-      #       echo "${GITHUB_SHA}" > .github/previous_sha/current_sha.txt
-      #     fi
+      #Identificador único que puede emplearse para nombrar el dag en snowflake a partir del commit
       - name: Save SHA IN ENV CONTEXT
         run: 
-          echo "CURRENT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
-
-      #     echo CURRENT_SHA: ${GITHUB_SHA} >> "$GITHUB_ENV" 
-
-      # - name: Get previous GITHUB_SHA
-      #   id: get-previous-sha
-      #   run: |
-      #     if [ -f .github/previous_sha/current_sha.txt ]; then
-      #       PREVIOUS_SHA=$(cat .github/previous_sha/current_sha.txt)
-      #       echo "PREVIOUS_SHA=${PREVIOUS_SHA}" >> $GITHUB_ENV
-      #     fi
-                  
+          echo "CURRENT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV 
 
       - name: Creates pipeline
         env:
@@ -77,6 +50,6 @@ jobs:
           TRAIN_DIR: ${{vars.TRAIN_DIR}}
           INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
           MODEL_NAME: ${{vars.MODEL_NAME}}
-          CURRENT_SHA: ${{ env.CURRENT_SHA }}
+
         run: 
          python $GITHUB_WORKSPACE/src/dags/dag_tasks.py

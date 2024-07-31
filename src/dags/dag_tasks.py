@@ -72,7 +72,7 @@ except Exception as e:
 
 
 
-with DAG(f"{model_name}_TRAIN_{current_sha}") as dag_train:
+with DAG(f"{model_name}_TRAIN") as dag_train:
     dag_task1_train = DAGTask(
         "process",
         StoredProcedureCall(
@@ -97,7 +97,7 @@ with DAG(f"{model_name}_TRAIN_{current_sha}") as dag_train:
 dag_task1_train >> dag_task2_train
 
 
-with DAG(f"{model_name}_INFERENCE_{current_sha}") as dag_inference:
+with DAG(f"{model_name}_INFERENCE") as dag_inference:
     dag_task1_inference = DAGTask(
         "process",
         StoredProcedureCall(
