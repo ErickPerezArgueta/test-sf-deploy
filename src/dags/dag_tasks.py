@@ -51,11 +51,11 @@ session.use_database(dict_creds['database'])
 session.use_schema(dict_creds['schema'])
 
 
-try:
-    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/""").collect()
-    session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/""").collect()
-except:
-    print(["Prueba de except"])
+# try:
+#     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/""").collect()
+#     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/""").collect()
+# except:
+#     print(["Prueba de except"])
 
 
 with DAG(f"{model_name}_TRAIN") as dag_train:
