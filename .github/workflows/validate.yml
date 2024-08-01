@@ -40,6 +40,11 @@ jobs:
           ENV_NAME: ${{ env.ENV_NAME }}
 
       - name: Creates pipeline
+        env:
+          STAGE_NAME: ${{vars.STAGE_NAME}}
+          TRAIN_DIR: ${{vars.TRAIN_DIR}}
+          INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
+          MODEL_NAME: ${{vars.MODEL_NAME}}
         run: 
          python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
 
