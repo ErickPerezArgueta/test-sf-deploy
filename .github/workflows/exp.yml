@@ -19,37 +19,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Check if Commit is part of a Pull Request
+        id: check_pr
+        run: |
+          PR_URL=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                          "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+                          | jq -r '.[0] | .url')
+          if [ "$PR_URL" != "null" ]; then
+            echo "PR_FOUND=true" >> $GITHUB_ENV
+          else
+            echo "PR_FOUND=false" >> $GITHUB_ENV
+          fi
+
+      - name: Stop if part of a Pull Request
+        if: env.PR_FOUND == 'true'
+        run: echo "This commit is part of a pull request. Stopping workflow."
+        continue-on-error: true
+
+
       - name: Setup Python 3.11
+        if: env.PR_FOUND == 'false'
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
       
-      - name: Install Python packages
-        run: pip install -r requirements.txt
+      # - name: Install Python packages
+      #   run: pip install -r requirements.txt
 
-      - name: Set up Snowflake
-        uses: ErickPerezArgueta/composite_sf@main
-        with:
-          SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-          SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
-          SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
-          SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
-          SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
-          SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
-          SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
-          ENV_NAME: ${{ env.ENV_NAME }}
+      # - name: Set up Snowflake
+      #   uses: ErickPerezArgueta/composite_sf@main
+      #   with:
+      #     SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      #     SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+      #     SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+      #     SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+      #     SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      #     SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+      #     SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_EXP }}
+      #     ENV_NAME: ${{ env.ENV_NAME }}
       
-      #Identificador único que puede emplearse para nombrar el dag en snowflake a partir del commit
-      - name: Save SHA IN ENV CONTEXT
-        run: 
-          echo "CURRENT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV 
+      # #Identificador único que puede emplearse para nombrar el dag en snowflake a partir del commit
+      # - name: Save SHA IN ENV CONTEXT
+      #   run: 
+      #     echo "CURRENT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV 
 
-      - name: Creates pipeline
-        env:
-          STAGE_NAME: ${{vars.STAGE_NAME}}
-          TRAIN_DIR: ${{vars.TRAIN_DIR}}
-          INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
-          MODEL_NAME: ${{vars.MODEL_NAME}}
+      # - name: Creates pipeline
+      #   env:
+      #     STAGE_NAME: ${{vars.STAGE_NAME}}
+      #     TRAIN_DIR: ${{vars.TRAIN_DIR}}
+      #     INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
+      #     MODEL_NAME: ${{vars.MODEL_NAME}}
 
-        run: 
-         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
+      #   run: 
+      #    python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
