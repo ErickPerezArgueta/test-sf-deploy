@@ -8,12 +8,12 @@ on:
 
 jobs:
   setup_snowflake_workspace_exp:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: EXP
     env:
       ENV_NAME: "exp"
       
-
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
