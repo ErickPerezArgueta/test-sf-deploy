@@ -12,3 +12,5 @@ agrega cambio
 test cambio para seguimiento de PRs
 
 test
+
+cambio para validar sincronización
