@@ -14,3 +14,4 @@ test cambio para seguimiento de PRs
 test
 
 cambio para validar sincronización
+se sube cambio con PR cerrado
