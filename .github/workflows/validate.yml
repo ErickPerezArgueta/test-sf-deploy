@@ -5,15 +5,15 @@ on:
   pull_request:
     branches:
       - validate
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
 
 jobs:
   setup_snowflake_workspace_validate:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'validate' && github.event.pull_request.head.ref == 'exp'
+    if: github.event.pull_request.base.ref == 'validate' && github.event.pull_request.head.ref == 'exp'
     runs-on: ubuntu-latest
     environment: VALIDATE
     env:
-      ENV_NAME: "exp"
+      ENV_NAME: "validate"
 
     steps:
       - name: Checkout repository
