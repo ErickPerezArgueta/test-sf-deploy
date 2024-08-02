@@ -19,3 +19,5 @@ se sube cambio con PR cerrado
 se sube cambio con PR ABIERTO
 
 cambio con exp.yml comentado
+
+elimna archivo exp
