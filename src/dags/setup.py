@@ -24,4 +24,4 @@ if __name__ == "__main__":
     
     # Here you can set the variables to be used throughout your program
     # For example:
-    # globals().update(config)
+    globals().update(config)
