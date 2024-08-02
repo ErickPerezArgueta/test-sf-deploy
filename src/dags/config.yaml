@@ -1,0 +1,13 @@
+dataspace:
+  accountname: coxasph-epb76465
+  username: Erick
+  password: Accenture2024!@
+  rolename: ACCOUNTADMIN
+  dbname: BANANA_QUALITY
+  warehousename: COMPUTE_WH
+  schemaname: EXP
+  STAGE_NAME: ML_MODELS
+  TRAIN_DIR: TRAIN_PIPELINE
+  INFERENCE_DIR: INFERENCE_PIPELINE
+  ENV_NAME: EXP
+  MODEL_NAME: BANANA_MODEL
