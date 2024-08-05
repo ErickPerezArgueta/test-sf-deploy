@@ -56,10 +56,10 @@ def load_config(env_name):
         ]
         
         # Reemplazar valores en el diccionario con variables de entorno
-        env_config = {var.lower(): os.getenv(var) for var in expected_vars}
+        env_config = {var: os.getenv(var) for var in expected_vars}
 
         # Validar que todas las variables esperadas están presentes en el entorno
-        missing_vars = [var for var in expected_vars if env_config[var.lower()] is None]
+        missing_vars = [var for var in expected_vars if env_config[var] is None]
         if missing_vars:
             raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
     
