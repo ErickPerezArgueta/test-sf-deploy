@@ -117,11 +117,10 @@ if __name__ == "__main__":
     
     session = create_snowpark_session(env_var)
 
-    try:
-        session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/""").collect()
-        session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/""").collect()
-    except:
-        print(["Prueba de except"])
+ 
+    session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/""").collect()
+    session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/""").collect()
+
 
 
     with DAG(f"{env_var['MODEL_NAME']}_TRAIN") as dag_train:
