@@ -19,11 +19,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: exp
+          ref: EXP
 
       - name: Verify config.yaml
         run: |
-          if [ ! -f $GITHUB_WORKSPACE/src/dags/config.yml ]; then
+          if [ ! -f $GITHUB_WORKSPACE/src/dags/config.yaml ]; then
             echo "config.yml not found!"
             exit 1
           fi
