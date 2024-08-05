@@ -39,7 +39,7 @@ from imports_inference_pipeline.inference_func import train_register_inference
 
 
 def load_config(env_name):
-    with open('config.yaml', 'r') as file:
+    with open('src/dags/config.yaml', 'r') as file:
         config = yaml.safe_load(file)
 
     env_config = config['environments'].get(env_name)
