@@ -50,6 +50,7 @@ def load_config(env_name):
 
         # Reemplazar valores en el diccionario con variables de entorno
         env_config = {var: os.getenv(var) for var in expected_vars}
+        print(f'Estructura de datos que contiene las configuraciones del ambiente: {env_config}')
 
         # Validar que todas las variables esperadas están presentes en el entorno
         missing_vars = [var for var in expected_vars if env_config[var] is None]
@@ -119,15 +120,15 @@ if __name__ == "__main__":
 
  
     session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/""").collect()
-    #session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/""").collect()
+    session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/""").collect()
 
-    # Build the stage path
-    stage_path = f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/"
+    # # Build the stage path
+    # stage_path = f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/"
 
-    # Construct the SQL command
-    sql_command = f"REMOVE {stage_path}"
-    print(sql_command)
-    session.sql(sql_command).collect()
+    # # Construct the SQL command
+    # sql_command = f"REMOVE {stage_path}"
+    # print(sql_command)
+    # session.sql(sql_command).collect()
 
 
 
