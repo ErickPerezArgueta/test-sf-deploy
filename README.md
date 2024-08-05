@@ -1,23 +1,2 @@
 # bm_cicd_github_actions
 Propuesta CICD de github actions
-
-actualizado a nueva cuenta de sf
-
-hasta este commit, todo funciona bien 8c5f880
-
-se eliminan versiones del model registry para permitir escritura de nuevo modelo.
-
-agrega cambio
-
-test cambio para seguimiento de PRs
-
-test
-
-cambio para validar sincronización
-se sube cambio con PR cerrado
-
-se sube cambio con PR ABIERTO
-
-cambio con exp.yml comentado
-
-elimna archivo exp
