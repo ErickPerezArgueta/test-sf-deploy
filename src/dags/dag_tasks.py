@@ -39,13 +39,6 @@ from imports_inference_pipeline.inference_func import train_register_inference
 
 
 def load_config(env_name):
-    with open('src/dags/config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-
-    env_config = config['environments'].get(env_name)
-
-    if not env_config:
-        raise ValueError(f"Environment '{env_name}' not found in config.yml")
 
     if env_name in ['validate', 'live']:
         # Definir las variables específicas que esperamos encontrar en el entorno
@@ -54,7 +47,7 @@ def load_config(env_name):
             'SNOWSQL_DATABASE', 'SNOWSQL_WAREHOUSE', 'SNOWFLAKE_SCHEMA', 'STAGE_NAME',
             'TRAIN_DIR', 'INFERENCE_DIR', 'MODEL_NAME'
         ]
-        
+
         # Reemplazar valores en el diccionario con variables de entorno
         env_config = {var: os.getenv(var) for var in expected_vars}
 
@@ -62,7 +55,14 @@ def load_config(env_name):
         missing_vars = [var for var in expected_vars if env_config[var] is None]
         if missing_vars:
             raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
-    
+    else:
+        with open('config.yaml', 'r') as file:
+            config = yaml.safe_load(file)
+            env_config = config['environments'].get(env_name)
+
+            if not env_config:
+                raise ValueError(f"Environment '{env_name}' not found in config.yaml")
+  
     return env_config
 
 
@@ -116,7 +116,6 @@ if __name__ == "__main__":
     env_var = load_config(current_environment)
     
     session = create_snowpark_session(env_var)
-
 
     try:
         session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/""").collect()

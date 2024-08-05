@@ -12,9 +12,4 @@ environments:
     INFERENCE_DIR: INFERENCE_PIPELINE
     MODEL_NAME: BANANA_MODEL
 
-  validate:
-    variable1: valor_variable1
-
-  live:
-    variable2: valor_variable2
 
