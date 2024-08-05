@@ -5,29 +5,28 @@ on:
   pull_request:
     branches:
       - validate
-    types:
-      - closed
+    types: [opened, synchronize]
 
-  #  paths:
-  #    - 'migrations/**'
 jobs:
   setup_snowflake_workspace_validate:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'validate' && github.event.pull_request.head.ref == 'exp'
+    if: github.event.pull_request.base.ref == 'validate' && github.event.pull_request.head.ref == 'exp'
     runs-on: ubuntu-latest
     environment: VALIDATE
     env:
-      SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-      SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
-      SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
-      SNOWSQL_ROLE: ${{ secrets.SF_ROLE }}
-      SNOWSQL_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-      SNOWSQL_DATABASE: ${{ secrets.SF_DATABASE }}
-      SNOWFLAKE_SCHEMA: ${{secrets.SF_SCHEMA_VALIDATE}}
+      ENV_NAME: "validate"
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: exp
+
+      - name: Verify config.yaml
+        run: |
+          if [ ! -f $GITHUB_WORKSPACE/src/dags/config.yaml ]; then
+            echo "config.yml not found!"
+            exit 1
+          fi
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
@@ -37,44 +36,30 @@ jobs:
       - name: Install Python packages
         run: pip install -r requirements.txt
 
-      - name: Download SnowSQL
-        run:  curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
-      
-      - name: Install SnowSQL
-        run: SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
-
-      - name: Configure snowcli
-        run: |
-          mkdir -p ~/.snowsql
-          echo "[connections.dev]" > ~/.snowsql/config
-          echo "accountname = $SNOWSQL_ACCOUNT" >> ~/.snowsql/config
-          echo "username = $SNOWSQL_USER" >> ~/.snowsql/config
-          echo "password = $SNOWSQL_PWD" >> ~/.snowsql/config
-          echo "rolename = $SNOWSQL_ROLE" >> ~/.snowsql/config
-          echo "warehousename = $SNOWSQL_WAREHOUSE" >> ~/.snowsql/config
-          echo "dbname = $SNOWSQL_DATABASE" >> ~/.snowsql/config
-          echo "schemaname = $SNOWFLAKE_SCHEMA" >> ~/.snowsql/config
-
-      # # Deploy setup
-      # - name: Deploy setup SQL script with SnowSQL and loads data to stage
-      #   run: |
-      #    python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/setup/general/env_space.sql
-      #    ~/bin/snowsql -c dev -q "PUT file://$GITHUB_WORKSPACE/data/banana_quality_raw.csv @BANANA_QUALITY.VALIDATE.RAW_DATA AUTO_COMPRESS=FALSE;"
-      
-      # - name: Loads data to stage
-      #   run: 
-      #     python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/loading/load_raw_file.sql
-          
-      # - name: loads process and train store procedures on Snowflake
-      #   run: |
-      #     python $GITHUB_WORKSPACE/src/sproc/sp_process.py
-      #     python $GITHUB_WORKSPACE/src/sproc/sp_train.py
-
-      # - name: Creates train pipeline
-      #   run: 
-      #    python $GITHUB_WORKSPACE/src/execute_sql.py --sql_file src/tasks/pipeline_train.sql
+      # - name: Set up Snowflake
+      #   uses: ErickPerezArgueta/composite_sf@main 
+      #   with:
+      #     SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      #     SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+      #     SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+      #     SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+      #     SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      #     SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+      #     SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA }}
 
       - name: Creates pipeline
+        env:
+          SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+          SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+          SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+          SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+          SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA }}
+          STAGE_NAME: ${{vars.STAGE_NAME}}
+          TRAIN_DIR: ${{vars.TRAIN_DIR}}
+          INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
+          MODEL_NAME: ${{vars.MODEL_NAME}}
         run: 
-         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
+         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py validate
 

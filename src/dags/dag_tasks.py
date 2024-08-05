@@ -1,7 +1,10 @@
 import configparser
 import os
+import sys
+import subprocess
+import yaml
 
-from datetime import timedelta
+
 from typing import *
 
 from snowflake.snowpark.session import Session
@@ -12,56 +15,178 @@ from snowflake.core._common import CreateMode
 from snowflake.core.task import StoredProcedureCall
 from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
-from functions import process_data, train_register
+from imports_train_pipeline.process_func import process_data
+from imports_train_pipeline.train_func import train_register
+from imports_inference_pipeline.process_inference_func import process_data_inference
+from imports_inference_pipeline.inference_func import train_register_inference
 
-my_dir = os.path.dirname(os.path.realpath(__file__))
 
-config = configparser.ConfigParser()
-config_path = os.path.expanduser("~/.snowsql/config") 
-config.read(config_path)
+# def load_local_variables(current_environment):
+#     with open("config.yaml", "r") as file:
+#         config = yaml.safe_load(file)
 
-# Access the values using the section and key
-# Assuming the values you want are in the "connections.dev" section
-dict_creds = {}
+#     if current_environment not in config['environments']:
+#         raise ValueError(f"Environment '{current_environment}' not found in configuration file")
 
-#Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
-dict_creds['account'] = config['connections.dev']['accountname']
-dict_creds['user'] = config['connections.dev']['username']
-dict_creds['password'] = config['connections.dev']['password']
-dict_creds['role'] = config['connections.dev']['rolename']
-dict_creds['database'] = config['connections.dev']['dbname']
-dict_creds['warehouse'] = config['connections.dev']['warehousename']
-dict_creds['schema'] = config['connections.dev']['schemaname']
+#     current_env_config = config['environments'][current_environment]
+#     available_environments = config['environments']
+#     ml_application_environments = [env for env in available_environments if env != current_environment]
 
-session = Session.builder.configs(dict_creds).create()
-session.use_database(dict_creds['database'])
-session.use_schema(dict_creds['schema'])
+#     if current_environment not in ml_application_environments:
+#         return current_env_config
+#     else:
+#         sys.exit(1)
 
-with DAG("MY_DAG", schedule=timedelta(minutes=2)) as dag:
-    dag_task1 = DAGTask(
-        "process",
-        StoredProcedureCall(
-            func=process_data,
-            stage_location="@ML_MODELS",
-            packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=[os.path.join(my_dir, 'functions.py')]
-        ),
-        warehouse="COMPUTE_WH"
-    )
-    dag_task2 = DAGTask(
-        "train_register",
-        StoredProcedureCall(
-            func=train_register,
-            stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.ML_MODELS",
-            packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-            imports=[os.path.join(my_dir, 'functions.py')]
-        ),
-        warehouse="COMPUTE_WH"
-    )
 
-dag_task1 >> dag_task2
+def load_config(env_name):
 
-root = Root(session)
-schema = root.databases[dict_creds['database']].schemas[dict_creds['schema']]
-dag_op = DAGOperation(schema)
-dag_op.deploy(dag, CreateMode.or_replace)
+    if env_name in ['validate', 'live']:
+        # Definir las variables específicas que esperamos encontrar en el entorno
+        expected_vars = [
+            'SNOWSQL_ACCOUNT', 'SNOWSQL_USER', 'SNOWSQL_PWD', 'SNOWSQL_ROLE',
+            'SNOWSQL_DATABASE', 'SNOWSQL_WAREHOUSE', 'SNOWFLAKE_SCHEMA', 'STAGE_NAME',
+            'TRAIN_DIR', 'INFERENCE_DIR', 'MODEL_NAME'
+        ]
+
+        # Reemplazar valores en el diccionario con variables de entorno
+        env_config = {var: os.getenv(var) for var in expected_vars}
+        print(f'Estructura de datos que contiene las configuraciones del ambiente: {env_config}')
+
+        # Validar que todas las variables esperadas están presentes en el entorno
+        missing_vars = [var for var in expected_vars if env_config[var] is None]
+        if missing_vars:
+            raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
+    else:
+        with open('config.yaml', 'r') as file:
+            config = yaml.safe_load(file)
+            env_config = config['environments'].get(env_name)
+
+            if not env_config:
+                raise ValueError(f"Environment '{env_name}' not found in config.yaml")
+  
+    return env_config
+
+
+def create_snowpark_session(env_var):
+    connections_parameters = {
+        'account': env_var['SNOWSQL_ACCOUNT'],
+        'user': env_var['SNOWSQL_USER'],
+        'password': env_var['SNOWSQL_PWD'],
+        'role': env_var['SNOWSQL_ROLE'],
+        'database': env_var['SNOWSQL_DATABASE'],
+        'warehouse': env_var['SNOWSQL_WAREHOUSE'],
+        'schema': env_var['SNOWFLAKE_SCHEMA']
+    }
+
+    session = Session.builder.configs(connections_parameters).create()
+
+    return session
+
+# def create_remote_session(env_var):
+#     my_dir = os.path.dirname(os.path.realpath(__file__))
+
+#     config = configparser.ConfigParser()
+#     config_path = os.path.expanduser("~/.snowsql/config") 
+#     config.read(config_path)
+#     stage_name=os.getenv("STAGE_NAME")
+#     train_dir=os.getenv("TRAIN_DIR")
+#     inference_dir=os.getenv("INFERENCE_DIR")
+#     MODEL_NAME=os.getenv("MODEL_NAME")
+
+#     dict_creds = {}
+
+#     #Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
+#     dict_creds['account'] = config[f'connections']['accountname']
+#     dict_creds['user'] = config[f'connections']['username']
+#     dict_creds['password'] = config[f'connections']['password']
+#     dict_creds['role'] = config[f'connections']['rolename']
+#     dict_creds['dbname'] = config[f'connections']['dbname']
+#     dict_creds['warehouse'] = config[f'connections']['warehousename']
+#     dict_creds['schemaname'] = config[f'connections']['schemanamename']
+
+#     session = Session.builder.configs(dict_creds).create()
+
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <environment>")
+        sys.exit(1)
+
+    current_environment = sys.argv[1]
+    env_var = load_config(current_environment)
+    
+    session = create_snowpark_session(env_var)
+
+ 
+    session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/""").collect()
+    session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/""").collect()
+
+
+
+
+    with DAG(f"{env_var['MODEL_NAME']}_TRAIN") as dag_train:
+        dag_task1_train = DAGTask(
+            "process",
+            StoredProcedureCall(
+                func=process_data,
+                stage_location=f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/PROCESS",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_train_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
+        dag_task2_train = DAGTask(
+            "train_register",
+            StoredProcedureCall(
+                func=train_register,
+                stage_location=f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/TRAIN",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_train_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
+
+    dag_task1_train >> dag_task2_train
+
+
+    with DAG(f"{env_var['MODEL_NAME']}_INFERENCE") as dag_inference:
+        dag_task1_inference = DAGTask(
+            "process",
+            StoredProcedureCall(
+                func=process_data_inference,
+                stage_location=f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/PROCESS",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_inference_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
+        dag_task2_inference = DAGTask(
+            "train_register",
+            StoredProcedureCall(
+                func=train_register_inference,
+                stage_location=f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/INFERENCE",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_inference_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
+
+    dag_task1_inference >> dag_task2_inference
+
+
+
+    root_train = Root(session)
+    schemaname_train = root_train.databases[env_var['SNOWSQL_DATABASE']].schemas[env_var['SNOWFLAKE_SCHEMA']]
+    dag_op_train = DAGOperation(schemaname_train)
+    dag_op_train.deploy(dag_train, CreateMode.or_replace)
+    dag_op_train.run(dag_train)
+
+
+    root_inference = Root(session)
+    schemaname_inference = root_inference.databases[env_var['SNOWSQL_DATABASE']].schemas[env_var['SNOWFLAKE_SCHEMA']]
+    dag_op_inference = DAGOperation(schemaname_inference)
+    dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
+
+
+
