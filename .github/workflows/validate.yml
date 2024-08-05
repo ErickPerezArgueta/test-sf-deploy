@@ -36,8 +36,7 @@ jobs:
           SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
           SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
           SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
-          SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA_VALIDATE }}
-          ENV_NAME: ${{ env.ENV_NAME }}
+          SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA }}
 
       - name: Creates pipeline
         env:
@@ -46,5 +45,5 @@ jobs:
           INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
           MODEL_NAME: ${{vars.MODEL_NAME}}
         run: 
-         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py
+         python $GITHUB_WORKSPACE/src/dags/dag_tasks.py validate
 

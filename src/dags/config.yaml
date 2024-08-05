@@ -6,15 +6,15 @@ environments:
     rolename: ACCOUNTADMIN
     dbname: BANANA_QUALITY
     warehousename: COMPUTE_WH
-    schemaname: EXP
+    sf_schema: EXP
     stage_name: ML_MODELS
     train_dir: TRAIN_PIPELINE
     inference_dir: INFERENCE_PIPELINE
     model_name: BANANA_MODEL
 
   validate:
-    accountname: coxasph-epb76465
+    variable1: valor_variable1
 
   live:
-    accountname: coxasph-epb76465
+    variable2: valor_variable2
 

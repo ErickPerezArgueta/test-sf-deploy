@@ -21,27 +21,52 @@ from imports_inference_pipeline.process_inference_func import process_data_infer
 from imports_inference_pipeline.inference_func import train_register_inference
 
 
-def load_local_variables(current_environment):
-    with open("config.yaml", "r") as file:
+# def load_local_variables(current_environment):
+#     with open("config.yaml", "r") as file:
+#         config = yaml.safe_load(file)
+
+#     if current_environment not in config['environments']:
+#         raise ValueError(f"Environment '{current_environment}' not found in configuration file")
+
+#     current_env_config = config['environments'][current_environment]
+#     available_environments = config['environments']
+#     ml_application_environments = [env for env in available_environments if env != current_environment]
+
+#     if current_environment not in ml_application_environments:
+#         return current_env_config
+#     else:
+#         sys.exit(1)
+
+
+def load_config(env_name):
+    with open('config.yaml', 'r') as file:
         config = yaml.safe_load(file)
 
-    if current_environment not in config['environments']:
-        raise ValueError(f"Environment '{current_environment}' not found in configuration file")
+    env_config = config['environments'].get(env_name)
 
-    current_env_config = config['environments'][current_environment]
-    available_environments = config['environments']
-    ml_application_environments = [env for env in available_environments if env != current_environment]
+    if not env_config:
+        raise ValueError(f"Environment '{env_name}' not found in config.yml")
 
-    if current_environment not in ml_application_environments:
-        return current_env_config
-    else:
-        sys.exit(1)
+    if env_name in ['validate', 'live']:
+        # Definir las variables específicas que esperamos encontrar en el entorno
+        expected_vars = [
+            'ACCOUNTNAME', 'USERNAME', 'PASSWORD', 'ROLENAME',
+            'DBNAME', 'WAREHOUSENAME', 'SF_SCHEMA', 'STAGE_NAME',
+            'TRAIN_DIR', 'INFERENCE_DIR', 'MODEL_NAME'
+        ]
+        
+        # Reemplazar valores en el diccionario con variables de entorno
+        env_config = {var.lower(): os.getenv(var) for var in expected_vars}
+
+        # Validar que todas las variables esperadas están presentes en el entorno
+        missing_vars = [var for var in expected_vars if env_config[var.lower()] is None]
+        if missing_vars:
+            raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
+    
+    return env_config
 
 
-
-
-
-def create_local_session(env_var):
+def create_snowpark_session(env_var):
     connections_parameters = {
         'account': env_var['accountname'],
         'user': env_var['username'],
@@ -49,37 +74,36 @@ def create_local_session(env_var):
         'role': env_var['rolename'],
         'database': env_var['dbname'],
         'warehouse': env_var['warehousename'],
-        'schema': env_var['schemaname']
+        'schema': env_var['sf_schema']
     }
 
     session = Session.builder.configs(connections_parameters).create()
 
     return session
 
-def create_remote_session(env_var):
-    my_dir = os.path.dirname(os.path.realpath(__file__))
+# def create_remote_session(env_var):
+#     my_dir = os.path.dirname(os.path.realpath(__file__))
 
-    config = configparser.ConfigParser()
-    config_path = os.path.expanduser("~/.snowsql/config") 
-    config.read(config_path)
-    stage_name=os.getenv("STAGE_NAME")
-    train_dir=os.getenv("TRAIN_DIR")
-    inference_dir=os.getenv("INFERENCE_DIR")
-    environment=os.getenv("ENV_NAME")
-    model_name=os.getenv("MODEL_NAME")
+#     config = configparser.ConfigParser()
+#     config_path = os.path.expanduser("~/.snowsql/config") 
+#     config.read(config_path)
+#     stage_name=os.getenv("STAGE_NAME")
+#     train_dir=os.getenv("TRAIN_DIR")
+#     inference_dir=os.getenv("INFERENCE_DIR")
+#     model_name=os.getenv("MODEL_NAME")
 
-    dict_creds = {}
+#     dict_creds = {}
 
-    #Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
-    dict_creds['account'] = config[f'connections.{environment}']['accountname']
-    dict_creds['user'] = config[f'connections.{environment}']['username']
-    dict_creds['password'] = config[f'connections.{environment}']['password']
-    dict_creds['role'] = config[f'connections.{environment}']['rolename']
-    dict_creds['dbname'] = config[f'connections.{environment}']['dbname']
-    dict_creds['warehouse'] = config[f'connections.{environment}']['warehousename']
-    dict_creds['schemaname'] = config[f'connections.{environment}']['schemanamename']
+#     #Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
+#     dict_creds['account'] = config[f'connections']['accountname']
+#     dict_creds['user'] = config[f'connections']['username']
+#     dict_creds['password'] = config[f'connections']['password']
+#     dict_creds['role'] = config[f'connections']['rolename']
+#     dict_creds['dbname'] = config[f'connections']['dbname']
+#     dict_creds['warehouse'] = config[f'connections']['warehousename']
+#     dict_creds['schemaname'] = config[f'connections']['schemanamename']
 
-    session = Session.builder.configs(dict_creds).create()
+#     session = Session.builder.configs(dict_creds).create()
 
 
 
@@ -89,10 +113,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     current_environment = sys.argv[1]
-    env_var = load_local_variables(current_environment)
-    print(env_var)
+    env_var = load_config(current_environment)
     
-    session = create_local_session(env_var)
+    session = create_snowpark_session(env_var)
 
 
     try:
