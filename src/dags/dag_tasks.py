@@ -122,13 +122,6 @@ if __name__ == "__main__":
     session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['TRAIN_DIR']}/""").collect()
     session.sql(f"""REMOVE @{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/""").collect()
 
-    # # Build the stage path
-    # stage_path = f"@{env_var['SNOWSQL_DATABASE']}.{env_var['SNOWFLAKE_SCHEMA']}.{env_var['STAGE_NAME']}/{env_var['INFERENCE_DIR']}/"
-
-    # # Construct the SQL command
-    # sql_command = f"REMOVE {stage_path}"
-    # print(sql_command)
-    # session.sql(sql_command).collect()
 
 
 
