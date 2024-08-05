@@ -119,8 +119,8 @@ if __name__ == "__main__":
 
 
     try:
-        session.sql(f"""REMOVE @{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['train_dir']}/""").collect()
-        session.sql(f"""REMOVE @{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['inference_dir']}/""").collect()
+        session.sql(f"""REMOVE @{env_var['dbname']}.{env_var['sf_schema']}.{env_var['stage_name']}/{env_var['train_dir']}/""").collect()
+        session.sql(f"""REMOVE @{env_var['dbname']}.{env_var['sf_schema']}.{env_var['stage_name']}/{env_var['inference_dir']}/""").collect()
     except:
         print(["Prueba de except"])
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
             "process",
             StoredProcedureCall(
                 func=process_data,
-                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['train_dir']}/PROCESS",
+                stage_location=f"@{env_var['dbname']}.{env_var['sf_schema']}.{env_var['stage_name']}/{env_var['train_dir']}/PROCESS",
                 packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
                 imports=['src/dags/imports_train_pipeline']
             ),
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             "train_register",
             StoredProcedureCall(
                 func=train_register,
-                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['train_dir']}/TRAIN",
+                stage_location=f"@{env_var['dbname']}.{env_var['sf_schema']}.{env_var['stage_name']}/{env_var['train_dir']}/TRAIN",
                 packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
                 imports=['src/dags/imports_train_pipeline']
             ),
@@ -155,7 +155,7 @@ if __name__ == "__main__":
             "process",
             StoredProcedureCall(
                 func=process_data_inference,
-                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['inference_dir']}/PROCESS",
+                stage_location=f"@{env_var['dbname']}.{env_var['sf_schema']}.{env_var['stage_name']}/{env_var['inference_dir']}/PROCESS",
                 packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
                 imports=['src/dags/imports_inference_pipeline']
             ),
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             "train_register",
             StoredProcedureCall(
                 func=train_register_inference,
-                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['inference_dir']}/INFERENCE",
+                stage_location=f"@{env_var['dbname']}.{env_var['sf_schema']}.{env_var['stage_name']}/{env_var['inference_dir']}/INFERENCE",
                 packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
                 imports=['src/dags/imports_inference_pipeline']
             ),
@@ -177,14 +177,14 @@ if __name__ == "__main__":
 
 
     root_train = Root(session)
-    schemaname_train = root_train.databases[env_var['dbname']].schemas[env_var['schemaname']]
+    schemaname_train = root_train.databases[env_var['dbname']].schemas[env_var['sf_schema']]
     dag_op_train = DAGOperation(schemaname_train)
     dag_op_train.deploy(dag_train, CreateMode.or_replace)
     dag_op_train.run(dag_train)
 
 
     root_inference = Root(session)
-    schemaname_inference = root_inference.databases[env_var['dbname']].schemas[env_var['schemaname']]
+    schemaname_inference = root_inference.databases[env_var['dbname']].schemas[env_var['sf_schema']]
     dag_op_inference = DAGOperation(schemaname_inference)
     dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
 
