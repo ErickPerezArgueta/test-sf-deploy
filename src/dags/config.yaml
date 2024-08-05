@@ -7,10 +7,10 @@ environments:
     dbname: BANANA_QUALITY
     warehousename: COMPUTE_WH
     schemaname: EXP
-    STAGE_NAME: ML_MODELS
-    TRAIN_DIR: TRAIN_PIPELINE
-    INFERENCE_DIR: INFERENCE_PIPELINE
-    MODEL_NAME: BANANA_MODEL
+    stage_name: ML_MODELS
+    train_dir: TRAIN_PIPELINE
+    inference_dir: INFERENCE_PIPELINE
+    model_name: BANANA_MODEL
 
   validate:
     accountname: coxasph-epb76465

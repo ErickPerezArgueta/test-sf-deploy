@@ -7,60 +7,79 @@ import yaml
 
 from typing import *
 
-# from snowflake.snowpark.session import Session
-# from snowflake.snowpark.version import VERSION
+from snowflake.snowpark.session import Session
+from snowflake.snowpark.version import VERSION
 
-# from snowflake.core import Root
-# from snowflake.core._common import CreateMode
-# from snowflake.core.task import StoredProcedureCall
-# from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
+from snowflake.core import Root
+from snowflake.core._common import CreateMode
+from snowflake.core.task import StoredProcedureCall
+from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
-# from imports_train_pipeline.process_func import process_data
-# from imports_train_pipeline.train_func import train_register
-# from imports_inference_pipeline.process_inference_func import process_data_inference
-# from imports_inference_pipeline.inference_func import train_register_inference
-
-
-# def set_environment():
-#     if len(sys.argv) != 2:
-#         print("Usage: python main.py <environment>")
-#         sys.exit(1)
-
-#     environment = sys.argv[1]
-
-#     # Execute the setup script with the environment argument
-#     result = subprocess.run(["python", "setup.py", environment], capture_output=True, text=True)
-
-#     print(type(result))
-
-#     if result.returncode != 0:
-#         print("Failed to setup environment")
-#         print(result.stderr)
-#         sys.exit(result.returncode)
-
-#     print(result.stdout)
+from imports_train_pipeline.process_func import process_data
+from imports_train_pipeline.train_func import train_register
+from imports_inference_pipeline.process_inference_func import process_data_inference
+from imports_inference_pipeline.inference_func import train_register_inference
 
 
-def load_config(current_environment):
+def load_local_variables(current_environment):
     with open("config.yaml", "r") as file:
         config = yaml.safe_load(file)
 
-    if current_environment in config['environments']:
-        return config['environments'][current_environment], config['environments']
-    else:
+    if current_environment not in config['environments']:
         raise ValueError(f"Environment '{current_environment}' not found in configuration file")
 
+    current_env_config = config['environments'][current_environment]
+    available_environments = config['environments']
+    ml_application_environments = [env for env in available_environments if env != current_environment]
 
-def load_variables(current_env, current_env_config, available_environments):
-    ml_application_environments = [env for env in available_environments if env != current_env]
-    
-    print(f'Las aplicaciones de ML son: {ml_application_environments}')
-
-    if current_env not in ml_application_environments:
-        globals().update(current_env_config)
-        print("Variables loaded into globals.")
+    if current_environment not in ml_application_environments:
+        return current_env_config
     else:
-        print("Environment is either 'pre' or 'prod'. No variables loaded.")
+        sys.exit(1)
+
+
+
+
+
+def create_local_session(env_var):
+    connections_parameters = {
+        'account': env_var['accountname'],
+        'user': env_var['username'],
+        'password': env_var['password'],
+        'role': env_var['rolename'],
+        'database': env_var['dbname'],
+        'warehouse': env_var['warehousename'],
+        'schema': env_var['schemaname']
+    }
+
+    session = Session.builder.configs(connections_parameters).create()
+
+    return session
+
+def create_remote_session(env_var):
+    my_dir = os.path.dirname(os.path.realpath(__file__))
+
+    config = configparser.ConfigParser()
+    config_path = os.path.expanduser("~/.snowsql/config") 
+    config.read(config_path)
+    stage_name=os.getenv("STAGE_NAME")
+    train_dir=os.getenv("TRAIN_DIR")
+    inference_dir=os.getenv("INFERENCE_DIR")
+    environment=os.getenv("ENV_NAME")
+    model_name=os.getenv("MODEL_NAME")
+
+    dict_creds = {}
+
+    #Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
+    dict_creds['account'] = config[f'connections.{environment}']['accountname']
+    dict_creds['user'] = config[f'connections.{environment}']['username']
+    dict_creds['password'] = config[f'connections.{environment}']['password']
+    dict_creds['role'] = config[f'connections.{environment}']['rolename']
+    dict_creds['dbname'] = config[f'connections.{environment}']['dbname']
+    dict_creds['warehouse'] = config[f'connections.{environment}']['warehousename']
+    dict_creds['schemaname'] = config[f'connections.{environment}']['schemanamename']
+
+    session = Session.builder.configs(dict_creds).create()
 
 
 
@@ -70,121 +89,81 @@ if __name__ == "__main__":
         sys.exit(1)
 
     current_environment = sys.argv[1]
- 
-   # Load configuration
-    current_env_config, available_environments = load_config(current_environment)
+    env_var = load_local_variables(current_environment)
+    print(env_var)
+    
+    session = create_local_session(env_var)
 
-    load_variables(
-        current_env=current_environment, 
-        current_env_config=current_env_config, 
-        available_environments=available_environments
+
+    try:
+        session.sql(f"""REMOVE @{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['train_dir']}/""").collect()
+        session.sql(f"""REMOVE @{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['inference_dir']}/""").collect()
+    except:
+        print(["Prueba de except"])
+
+
+    with DAG(f"{env_var['model_name']}_TRAIN") as dag_train:
+        dag_task1_train = DAGTask(
+            "process",
+            StoredProcedureCall(
+                func=process_data,
+                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['train_dir']}/PROCESS",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_train_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
         )
-    
-    model_name=globals().get('MODEL_NAME')
-    print(model_name)
-    
+        dag_task2_train = DAGTask(
+            "train_register",
+            StoredProcedureCall(
+                func=train_register,
+                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['train_dir']}/TRAIN",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_train_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
 
-    # print(var_env)
-    
-   
-
-    # Set variables as globals
-    # globals().update(config)
-    # my_dir = os.path.dirname(os.path.realpath(__file__))
-    # stage_name=globals().get('STAGE_NAME')
-    # train_dir=globals().get('TRAIN_DIR')
-    # inference_dir=globals().get('INFERENCE_DIR')
-    # environment=globals().get('ENV_NAME')
-    
-    #print(stage_name)
-
-    # # Access the values using the section and key
-    # # Assuming the values you want are in the "connections.dev" section
-    # dict_creds = {}
-
-    # #Se comenta esta linea de codigo para usar el json con credenciales dentro del proyecto
-    # dict_creds['account'] = config[f'connections.{environment}']['accountname']
-    # dict_creds['user'] = config[f'connections.{environment}']['username']
-    # dict_creds['password'] = config[f'connections.{environment}']['password']
-    # dict_creds['role'] = config[f'connections.{environment}']['rolename']
-    # dict_creds['database'] = config[f'connections.{environment}']['dbname']
-    # dict_creds['warehouse'] = config[f'connections.{environment}']['warehousename']
-    # dict_creds['schema'] = config[f'connections.{environment}']['schemaname']
-
-    # session = Session.builder.configs(dict_creds).create()
-    # session.use_database(dict_creds['database'])
-    # session.use_schema(dict_creds['schema'])
+    dag_task1_train >> dag_task2_train
 
 
-    # try:
-    #     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/""").collect()
-    #     session.sql(f"""REMOVE @{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/""").collect()
-    # except:
-    #     print(["Prueba de except"])
+    with DAG(f"{env_var['model_name']}_INFERENCE") as dag_inference:
+        dag_task1_inference = DAGTask(
+            "process",
+            StoredProcedureCall(
+                func=process_data_inference,
+                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['inference_dir']}/PROCESS",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_inference_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
+        dag_task2_inference = DAGTask(
+            "train_register",
+            StoredProcedureCall(
+                func=train_register_inference,
+                stage_location=f"@{env_var['dbname']}.{env_var['schemaname']}.{env_var['stage_name']}/{env_var['inference_dir']}/INFERENCE",
+                packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
+                imports=['src/dags/imports_inference_pipeline']
+            ),
+            warehouse="COMPUTE_WH"
+        )
 
-
-    # with DAG(f"{model_name}_TRAIN") as dag_train:
-    #     dag_task1_train = DAGTask(
-    #         "process",
-    #         StoredProcedureCall(
-    #             func=process_data,
-    #             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/PROCESS",
-    #             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-    #             imports=['src/dags/imports_train_pipeline']
-    #         ),
-    #         warehouse="COMPUTE_WH"
-    #     )
-    #     dag_task2_train = DAGTask(
-    #         "train_register",
-    #         StoredProcedureCall(
-    #             func=train_register,
-    #             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{train_dir}/TRAIN",
-    #             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-    #             imports=['src/dags/imports_train_pipeline']
-    #         ),
-    #         warehouse="COMPUTE_WH"
-    #     )
-
-    # dag_task1_train >> dag_task2_train
-
-
-    # with DAG(f"{model_name}_INFERENCE") as dag_inference:
-    #     dag_task1_inference = DAGTask(
-    #         "process",
-    #         StoredProcedureCall(
-    #             func=process_data_inference,
-    #             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/PROCESS",
-    #             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-    #             imports=['src/dags/imports_inference_pipeline']
-    #         ),
-    #         warehouse="COMPUTE_WH"
-    #     )
-    #     dag_task2_inference = DAGTask(
-    #         "train_register",
-    #         StoredProcedureCall(
-    #             func=train_register_inference,
-    #             stage_location=f"@{dict_creds['database']}.{dict_creds['schema']}.{stage_name}/{inference_dir}/INFERENCE",
-    #             packages=['snowflake-ml-python', 'snowflake-snowpark-python'],
-    #             imports=['src/dags/imports_inference_pipeline']
-    #         ),
-    #         warehouse="COMPUTE_WH"
-    #     )
-
-    # dag_task1_inference >> dag_task2_inference
+    dag_task1_inference >> dag_task2_inference
 
 
 
-    # root_train = Root(session)
-    # schema_train = root_train.databases[dict_creds['database']].schemas[dict_creds['schema']]
-    # dag_op_train = DAGOperation(schema_train)
-    # dag_op_train.deploy(dag_train, CreateMode.or_replace)
-    # dag_op_train.run(dag_train)
+    root_train = Root(session)
+    schemaname_train = root_train.databases[env_var['dbname']].schemas[env_var['schemaname']]
+    dag_op_train = DAGOperation(schemaname_train)
+    dag_op_train.deploy(dag_train, CreateMode.or_replace)
+    dag_op_train.run(dag_train)
 
 
-    # root_inference = Root(session)
-    # schema_inference = root_inference.databases[dict_creds['database']].schemas[dict_creds['schema']]
-    # dag_op_inference = DAGOperation(schema_inference)
-    # dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
+    root_inference = Root(session)
+    schemaname_inference = root_inference.databases[env_var['dbname']].schemas[env_var['schemaname']]
+    dag_op_inference = DAGOperation(schemaname_inference)
+    dag_op_inference.deploy(dag_inference, CreateMode.or_replace)
 
 
 
