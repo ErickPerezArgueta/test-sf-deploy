@@ -1,16 +1,16 @@
 environments:
   dataspace:
-    accountname: coxasph-epb76465
-    username: Erick
-    password: Accenture2024!@
-    rolename: ACCOUNTADMIN
-    dbname: BANANA_QUALITY
-    warehousename: COMPUTE_WH
-    sf_schema: EXP
-    stage_name: ML_MODELS
-    train_dir: TRAIN_PIPELINE
-    inference_dir: INFERENCE_PIPELINE
-    model_name: BANANA_MODEL
+    SNOWSQL_ACCOUNT: coxasph-epb76465
+    SNOWSQL_USER: Erick
+    SNOWSQL_PWD: Accenture2024!@
+    SNOWSQL_ROLE: ACCOUNTADMIN
+    SNOWSQL_DATABASE: BANANA_QUALITY
+    SNOWSQL_WAREHOUSE: COMPUTE_WH
+    SNOWFLAKE_SCHEMA: EXP
+    STAGE_NAME: ML_MODELS
+    TRAIN_DIR: TRAIN_PIPELINE
+    INFERENCE_DIR: INFERENCE_PIPELINE
+    MODEL_NAME: BANANA_MODEL
 
   validate:
     variable1: valor_variable1
