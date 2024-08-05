@@ -57,7 +57,8 @@ def load_config(env_name):
         if missing_vars:
             raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
     else:
-        with open('config.yaml', 'r') as file:
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(current_dir, 'config.yaml'), 'r') as file:
             config = yaml.safe_load(file)
             env_config = config['environments'].get(env_name)
 

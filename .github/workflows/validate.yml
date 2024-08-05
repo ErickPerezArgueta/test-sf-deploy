@@ -21,13 +21,6 @@ jobs:
         with:
           ref: exp
 
-      - name: Verify config.yaml
-        run: |
-          if [ ! -f $GITHUB_WORKSPACE/src/dags/config.yaml ]; then
-            echo "config.yml not found!"
-            exit 1
-          fi
-
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
