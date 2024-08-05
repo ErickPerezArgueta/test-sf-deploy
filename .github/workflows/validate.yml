@@ -36,9 +36,19 @@ jobs:
       - name: Install Python packages
         run: pip install -r requirements.txt
 
-      - name: Set up Snowflake
-        uses: ErickPerezArgueta/composite_sf@main
-        with:
+      # - name: Set up Snowflake
+      #   uses: ErickPerezArgueta/composite_sf@main 
+      #   with:
+      #     SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      #     SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
+      #     SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
+      #     SNOWSQL_ROLE: ${{ vars.SF_ROLE }}
+      #     SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      #     SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
+      #     SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA }}
+
+      - name: Creates pipeline
+        env:
           SNOWSQL_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
           SNOWSQL_USER: ${{ secrets.SF_USERNAME }}
           SNOWSQL_PWD: ${{ secrets.SF_PASSWORD }}
@@ -46,9 +56,6 @@ jobs:
           SNOWSQL_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
           SNOWSQL_DATABASE: ${{ vars.SF_DATABASE }}
           SNOWFLAKE_SCHEMA: ${{ vars.SF_SCHEMA }}
-
-      - name: Creates pipeline
-        env:
           STAGE_NAME: ${{vars.STAGE_NAME}}
           TRAIN_DIR: ${{vars.TRAIN_DIR}}
           INFERENCE_DIR: ${{vars.INFERENCE_DIR}}
